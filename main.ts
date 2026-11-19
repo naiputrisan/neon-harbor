@@ -78,8 +78,14 @@ function validateEntry(): void {
 validateEntry();
 
 // Start from an empty output directory so two runs write identical bytes.
-rmSync(outputDir, { recursive: true, force: true });
+// Empty only the directory's contents, never the directory itself: in the
+// grader /output is a mounted volume, and removing a mount point fails
+// (EACCES as user 65534 / EBUSY) — that was the round-1 run_completes
+// failure: rmSync('/output') threw before anything was written.
 mkdirSync(outputDir, { recursive: true });
+for (const name of readdirSync(outputDir)) {
+  rmSync(join(outputDir, name), { recursive: true, force: true });
+}
 cpSync(join(repoRoot, 'game'), join(outputDir, 'game'), { recursive: true });
 cpSync(join(repoRoot, 'screenshots'), join(outputDir, 'screenshots'), { recursive: true });
 
